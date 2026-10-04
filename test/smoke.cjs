@@ -20,6 +20,11 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
 
   // 1. render inicial
   ok(d.querySelectorAll('.kpi').length === 4, 'panel: 4 KPIs');
+  ok(d.querySelectorAll('.nav a').length === 0, 'sidebar: sin enlaces a otras apps');
+  const uiTxt = d.getElementById('app').textContent;
+  ok(uiTxt.indexOf('Hacer pedido') === -1 && uiTxt.indexOf('DevTools') === -1
+    && uiTxt.indexOf('tortas-devtools') === -1,
+    'página: solo gestión — sin rastro de pedidos o devtools en la UI');
   ok(d.querySelectorAll('#orders-body tr').length === 2, 'panel: 2 pedidos de ejemplo');
   ok(d.querySelector('#orders-body').textContent.includes('O-0002') && d.querySelector('#orders-body').textContent.includes('Nuevo'), 'panel: O-0002 nuevo');
   ok(d.querySelectorAll('#tab-body .stockbar').length === 5, 'disponibilidad: 5 productos con barra de stock');
