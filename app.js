@@ -22,6 +22,7 @@ const app = (() => {
     cash: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10h.01M18 14h.01"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
     zap: '<path d="M13 2 3 14h8l-1 8 11-13h-9l1-7Z"/>',
+    download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/>',
   };
   const icon = (n, s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || ''}</svg>`;
   document.querySelectorAll('.nav a[data-icon]').forEach(a => a.insertAdjacentHTML('afterbegin', icon(a.dataset.icon, 17)));
@@ -95,7 +96,10 @@ const app = (() => {
       <section class="card">
         <div class="card-head">
           <h2>Pedidos</h2>
-          <div class="seg" id="order-filters"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="seg" id="order-filters"></div>
+            <button class="btn sm" data-act="export-pdf" title="Descargar el reporte de movimientos en PDF">${icon('download', 14)} Exportar PDF</button>
+          </div>
         </div>
         <div style="overflow-x:auto">
           <table class="table">
@@ -200,6 +204,53 @@ const app = (() => {
     }
   }
 
+  // ---------- exportación de movimientos a PDF ----------
+  const EST_RGB = {
+    nuevo: [0.18, 0.45, 0.72], preparando: [0.37, 0.26, 0.6], enviado: [0.54, 0.35, 0.06],
+    entregado: [0.14, 0.4, 0.23], cancelado: [0.58, 0.22, 0.17],
+  };
+  const FILTER_LABEL = { todos: 'Todos', activos: 'En curso', entregados: 'Entregados', cancelados: 'Cancelados' };
+
+  function buildExport() {
+    const ahora = new Date();
+    const p2 = n => String(n).padStart(2, '0');
+    const filas = filteredOrders().map(o => {
+      const d = new Date(o.createdAt);
+      return [
+        o.id,
+        `${p2(d.getDate())}/${p2(d.getMonth() + 1)} ${p2(d.getHours())}:${p2(d.getMinutes())}`,
+        o.deliveryDate ? Store.fecha(o.deliveryDate) : '',
+        o.customer.name,
+        o.items.map(it => `${it.qty}× ${it.name}`).join(', '),
+        `${o.payStatus}${o.payMethod === 'efectivo' ? ' efvo.' : ' transf.'}`,
+        { t: STATUS_LABEL[o.status], rgb: EST_RGB[o.status] },
+        Store.money(o.total),
+      ];
+    });
+    const pagados = Store.db.orders.filter(o => o.status !== 'cancelado' && ['aprobado', 'cobrado'].includes(o.payStatus)).reduce((s, o) => s + o.total, 0);
+    const pendiente = Store.db.orders.filter(o => o.status !== 'cancelado' && o.payStatus === 'pendiente').reduce((s, o) => s + o.total, 0);
+    return {
+      titulo: 'Tortas · Hechas a Mano — Reporte de movimientos',
+      sub: `Generado el ${ahora.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })} a las ${p2(ahora.getHours())}:${p2(ahora.getMinutes())} · Filtro: ${FILTER_LABEL[ui.filter]}`,
+      resumen: `Pedidos: ${filas.length}    ·    Pagados: ${Store.money(pagados)}    ·    Pendiente de cobro: ${Store.money(pendiente)}    ·    Cancelados: ${Store.db.orders.filter(o => o.status === 'cancelado').length}`,
+      columnas: [
+        { t: 'Pedido', ancho: 52 }, { t: 'Fecha', ancho: 56 }, { t: 'Entrega', ancho: 48 },
+        { t: 'Cliente', ancho: 92 }, { t: 'Artículos', ancho: 117 }, { t: 'Pago', ancho: 62 },
+        { t: 'Estado', ancho: 48 }, { t: 'Total', ancho: 40, align: 'right' },
+      ],
+      filas,
+      pie: 'Tortas · Hechas a Mano — sistema de pedidos (prototipo)',
+    };
+  }
+
+  function exportPdf() {
+    const payload = buildExport();
+    const bytes = PDFMovimientos.build(payload);
+    PDFMovimientos.download(bytes, `movimientos-tortas-${new Date().toISOString().slice(0, 10)}.pdf`);
+    Store.event('panel', `exportó PDF de movimientos (${payload.filas.length} filas)`);
+    toast('Reporte PDF descargado', 'check');
+  }
+
   function updateAll() { updateKPIs(); updateFilters(); updateOrders(); updateTab(); }
 
   // ---------- eventos ----------
@@ -221,6 +272,7 @@ const app = (() => {
       case 'modal-close': closeModal(); break;
       case 'restock': Store.restock(id).catch(err => toast(Store.esc(err.message), 'bell')); break;
       case 'filter': ui.filter = v; updateFilters(); updateOrders(); break;
+      case 'export-pdf': exportPdf(); break;
       case 'tab': ui.tab = v; updateTab(); break;
     }
   });

@@ -6,6 +6,7 @@ const { JSDOM } = require('jsdom');
 const DIR = __dirname + '/..';
 const html = fs.readFileSync(`${DIR}/index.html`, 'utf8')
   .replace('<script src="core.js"></script>', () => `<script>\n${fs.readFileSync(`${DIR}/core.js`, 'utf8')}\n</script>`)
+  .replace('<script src="pdf.js"></script>', () => `<script>\n${fs.readFileSync(`${DIR}/pdf.js`, 'utf8')}\n</script>`)
   .replace('<script src="app.js"></script>', () => `<script>\n${fs.readFileSync(`${DIR}/app.js`, 'utf8')}\n</script>`);
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -70,6 +71,27 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   ok(d.querySelector('#orders-body').textContent.includes('Cancelado'), 'cancelar: O-0002 cancelado');
   const persisted2 = JSON.parse(dom.window.localStorage.getItem('tortas-pedidos-v1'));
   ok(persisted2.products.find(p => p.id === 'p1').stock === 8, 'cancelar: stock de Selva Negra devuelto');
+
+  // 7. exportar movimientos a PDF
+  ok(!!d.querySelector('[data-act="export-pdf"]'), 'export: botón Exportar PDF presente');
+  let pdfBlob = null;
+  dom.window.URL.createObjectURL = b => { pdfBlob = b; return 'blob:test'; };
+  dom.window.URL.revokeObjectURL = () => {};
+  d.querySelector('[data-act="export-pdf"]').click();
+  await sleep(60);
+  ok(!!pdfBlob, 'export: se generó un archivo al pulsar el botón');
+  const pdf = Buffer.from(await pdfBlob.arrayBuffer()).toString('latin1');
+  ok(pdf.startsWith('%PDF-1.4') && pdf.trimEnd().endsWith('%%EOF'), 'export: estructura PDF válida (cabecera y EOF)');
+  const sx = parseInt(pdf.match(/startxref\s+(\d+)/)[1], 10);
+  ok(pdf.slice(sx, sx + 4) === 'xref', 'export: startxref apunta a la tabla xref');
+  const offs = [...pdf.slice(sx).matchAll(/(\d{10}) 00000 n/g)].map(m => parseInt(m[1], 10));
+  ok(offs.every((off, k) => pdf.slice(off, off + 12).startsWith(`${k + 1} 0 obj`)),
+    `export: los ${offs.length} offsets del xref apuntan a objetos reales`);
+  const npag = (pdf.match(/\/Type \/Page[^s]/g) || []).length;
+  ok(npag >= 1, `export: ${npag} página(s) en el documento`);
+  ok(pdf.includes('Reporte de movimientos'), 'export: título del reporte presente');
+  ok(pdf.includes('O-0002') && pdf.includes('O-0001'), 'export: contiene los pedidos');
+  ok(pdf.includes('Cancelado') && pdf.includes('$18.000'), 'export: estados y montos CLP presentes');
 
   console.log(fails ? `\n${fails} FALLOS` : '\nTODO OK');
   process.exit(fails ? 1 : 0);

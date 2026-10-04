@@ -23,12 +23,16 @@ Las tres aplicaciones del sistema (repos separados, mismo Store compartido vía
   Al bajar de 3 unidades salta alerta de bajo stock.
 - **Clientes**: registro por teléfono con número de pedidos y consumo acumulado.
 - **Actividad**: feed de notificaciones (pedidos nuevos, cambios de estado, pagos).
+- **Exportar PDF**: botón en la cabecera de Pedidos — genera el reporte de
+  movimientos (resumen + tabla con estados coloreados, paginado y numerado) con un
+  generador de PDF propio, sin dependencias. Respeta el filtro activo.
 - Todo se refresca **en vivo**: si entra un pedido desde otra pestaña (o desde la
   página de pedidos), el panel se actualiza solo.
 
 ## Técnica
 
 SPA sin framework: `core.js` (Store: datos + API simulada + bus) + `app.js` (vista única)
-+ `style.css` (design system kraft del negocio). Sin build, sin dependencias.
++ `pdf.js` (generador de PDF propio) + `style.css` (design system kraft del negocio).
+Sin build, sin dependencias.
 
 Test funcional: `npm i jsdom && node test/smoke.cjs`.
