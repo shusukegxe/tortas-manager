@@ -23,6 +23,7 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   const dom = new JSDOM(html, {
     runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
     beforeParse(window) {
+      window.Notification = { permission: 'default', requestPermission: async () => 'granted' };
       window.fetch = async () => ({ ok: true, json: async () => pedidoRemoto });
     },
   });
@@ -35,6 +36,7 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   ok(d.querySelector('#orders-body').textContent.includes('Cliente Remoto'), 'multi-dispositivo: cliente remoto visible');
 
   // 1. render inicial
+  ok(d.getElementById('btn-avisos') && !d.getElementById('btn-avisos').hidden, 'avisos: botón visible con permiso en default');
   ok(d.querySelectorAll('.kpi').length === 4, 'panel: 4 KPIs');
   ok(d.querySelectorAll('.nav a').length === 0, 'sidebar: sin enlaces a otras apps');
   const uiTxt = d.getElementById('app').textContent;

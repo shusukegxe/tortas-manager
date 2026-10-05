@@ -78,18 +78,6 @@ const app = (() => {
     });
     aviso.onclick = () => window.focus();
   }
-  {
-    const btnAvisos = document.getElementById('btn-avisos');
-    if ('Notification' in window && Notification.permission === 'default') {
-      btnAvisos.hidden = false;
-      btnAvisos.addEventListener('click', () => {
-        Notification.requestPermission().then(p => {
-          if (p === 'granted') { btnAvisos.hidden = true; toast('Avisos del navegador activados', 'bell'); }
-          else toast('Avisos bloqueados: actívalos en los permisos del sitio', 'bell');
-        });
-      });
-    }
-  }
 
   const modalRoot = document.getElementById('modal-root');
   function openModal(html) { modalRoot.innerHTML = `<div class="modal">${html}</div>`; modalRoot.style.display = 'flex'; }
@@ -141,6 +129,19 @@ const app = (() => {
         <div class="tab-body" id="tab-body"></div>
       </section>
     </div>`;
+
+  {
+    const btnAvisos = document.getElementById('btn-avisos');
+    if (btnAvisos && 'Notification' in window && Notification.permission === 'default') {
+      btnAvisos.hidden = false;
+      btnAvisos.addEventListener('click', () => {
+        Notification.requestPermission().then(p => {
+          if (p === 'granted') { btnAvisos.hidden = true; toast('Avisos del navegador activados', 'bell'); }
+          else toast('Avisos bloqueados: actívalos en los permisos del sitio', 'bell');
+        });
+      });
+    }
+  }
 
   // ---------- renders ----------
   function updateKPIs() {
