@@ -58,6 +58,7 @@ const app = (() => {
   const PAY = { aprobado: 'b-green', cobrado: 'b-green', pendiente: 'b-amber', rechazado: 'b-red' };
   const STATUS_LABEL = Store.STATUS_LABEL;
   const TAMLABEL = { P: 'Pequeña', M: 'Mediana', G: 'Grande' };
+  const tamTxt = it => it.tam && TAMLABEL[it.tam] && !it.name.includes(TAMLABEL[it.tam]) ? ` (${TAMLABEL[it.tam]})` : '';
   const stockDot = n => n <= 0 ? 'var(--red)' : n <= Store.LOW ? 'var(--amber)' : 'var(--green)';
 
   // ---------- helpers ----------
