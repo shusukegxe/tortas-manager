@@ -233,6 +233,25 @@ const Store = (() => {
     });
   }
 
+  // pedidos que llegaron desde la web pública (data/pedidos.json via Apps Script):
+  // se mezclan por id sin pisar los locales; idéntico efecto a un pedido hecho
+  // en otra pestaña, pero entre dispositivos
+  function mergeRemote(ordenes) {
+    if (!Array.isArray(ordenes) || !ordenes.length) return 0;
+    let nuevos = 0;
+    for (const o of ordenes) {
+      if (!o || !o.id || db.orders.some(x => x.id === o.id)) continue;
+      db.orders.unshift({ ...o, remote: true });
+      nuevos++;
+    }
+    if (nuevos) {
+      db.orders.sort((a, b) => b.createdAt - a.createdAt);
+      save();
+      emit();
+    }
+    return nuevos;
+  }
+
   function resetDemo() {
     db = seedAndWrite();
     save();
@@ -244,6 +263,6 @@ const Store = (() => {
     LOW, NEXT, FLOW, STATUS_LABEL,
     money, fecha, hora, ahora, esc,
     subscribe, save, prod, event,
-    placeOrder, advanceOrder, cancelOrder, restock, resetDemo,
+    placeOrder, advanceOrder, cancelOrder, restock, resetDemo, mergeRemote,
   };
 })();

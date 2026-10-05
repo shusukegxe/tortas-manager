@@ -280,5 +280,21 @@ const app = (() => {
   // cualquier cambio (local o de las otras páginas) redibuja el panel
   Store.subscribe(updateAll);
 
+  // pedidos reales entre dispositivos: la web pública hace commit de
+  // data/pedidos.json (via Apps Script) y este panel lo lee desde Pages
+  const FUENTE_PEDIDOS = 'https://shusukegxe.github.io/venta-tortas-caseras/data/pedidos.json';
+  async function sondearRemoto() {
+    try {
+      const res = await fetch(FUENTE_PEDIDOS, { cache: 'no-store' });
+      if (!res.ok) return;
+      const ordenes = await res.json();
+      const n = Store.mergeRemote(ordenes);
+      if (n > 0) toast(`${n} pedido${n > 1 ? 's' : ''} nuevo${n > 1 ? 's' : ''} de la web`, 'receipt');
+    } catch { /* sin conexión o sin archivo: sigue el modo demo */ }
+  }
+  sondearRemoto();
+  setInterval(sondearRemoto, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) sondearRemoto(); });
+
   updateAll();
 })();

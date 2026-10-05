@@ -14,10 +14,25 @@ let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg); if (!cond) fails++; };
 
 (async () => {
-  const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true });
+  const pedidoRemoto = [{
+    id: 'O-0100', customer: { name: 'Cliente Remoto', phone: '999000111', address: 'Av. Web 789', note: '' },
+    items: [{ pid: 'p1', name: 'Selva Negra', price: 18000, qty: 1 }],
+    total: 18000, payMethod: 'transferencia', payStatus: 'pendiente', status: 'nuevo',
+    deliveryDate: '', createdAt: Date.now(), history: [{ status: 'nuevo', at: Date.now() }],
+  }];
+  const dom = new JSDOM(html, {
+    runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+    beforeParse(window) {
+      window.fetch = async () => ({ ok: true, json: async () => pedidoRemoto });
+    },
+  });
   dom.window.onerror = e => { console.log('  ONERROR ' + e); fails++; };
   const d = dom.window.document;
-  await sleep(300);
+  await sleep(600);
+
+  // 0. pedidos reales de la web pública, leídos entre dispositivos
+  ok(d.querySelector('#orders-body').textContent.includes('O-0100'), 'multi-dispositivo: pedido de la web aparece en el panel');
+  ok(d.querySelector('#orders-body').textContent.includes('Cliente Remoto'), 'multi-dispositivo: cliente remoto visible');
 
   // 1. render inicial
   ok(d.querySelectorAll('.kpi').length === 4, 'panel: 4 KPIs');
@@ -26,7 +41,7 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   ok(uiTxt.indexOf('Hacer pedido') === -1 && uiTxt.indexOf('DevTools') === -1
     && uiTxt.indexOf('tortas-devtools') === -1,
     'página: solo gestión — sin rastro de pedidos o devtools en la UI');
-  ok(d.querySelectorAll('#orders-body tr').length === 2, 'panel: 2 pedidos de ejemplo');
+  ok(d.querySelectorAll('#orders-body tr').length === 3, 'panel: 2 de ejemplo + 1 remoto (multi-dispositivo)');
   ok(d.querySelector('#orders-body').textContent.includes('O-0002') && d.querySelector('#orders-body').textContent.includes('Nuevo'), 'panel: O-0002 nuevo');
   ok(d.querySelectorAll('#tab-body .stockbar').length === 5, 'disponibilidad: 5 productos con barra de stock');
 
