@@ -284,3 +284,5 @@ svg { flex: none; }
 .lat-chip { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .lat-chip b { color: var(--text); }
 @media (max-width: 960px) { .stats-grid { grid-template-columns: 1fr; } }
+
+.btn[hidden] { display: none !important; }
