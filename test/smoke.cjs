@@ -106,7 +106,7 @@ const ok = (cond, msg) => { console.log((cond ? '  OK ' : ' FAIL') + ' ' + msg);
   ok(npag >= 1, `export: ${npag} página(s) en el documento`);
   ok(pdf.includes('Reporte de movimientos'), 'export: título del reporte presente');
   ok(pdf.includes('O-0002') && pdf.includes('O-0001'), 'export: contiene los pedidos');
-  ok(pdf.includes('Cancelado') && pdf.includes('$18.000'), 'export: estados y montos CLP presentes');
+  ok(pdf.includes('Cancelado') && pdf.includes('S/ 72.00'), 'export: estados y montos en soles presentes');
 
   console.log(fails ? `\n${fails} FALLOS` : '\nTODO OK');
   process.exit(fails ? 1 : 0);

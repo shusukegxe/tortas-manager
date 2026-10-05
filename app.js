@@ -57,6 +57,7 @@ const app = (() => {
   const META = { nuevo: { badge: 'b-blue' }, preparando: { badge: 'b-violet' }, enviado: { badge: 'b-amber' }, entregado: { badge: 'b-green' }, cancelado: { badge: 'b-red' } };
   const PAY = { aprobado: 'b-green', cobrado: 'b-green', pendiente: 'b-amber', rechazado: 'b-red' };
   const STATUS_LABEL = Store.STATUS_LABEL;
+  const TAMLABEL = { P: 'Pequeña', M: 'Mediana', G: 'Grande' };
   const stockDot = n => n <= 0 ? 'var(--red)' : n <= Store.LOW ? 'var(--amber)' : 'var(--green)';
 
   // ---------- helpers ----------
@@ -155,7 +156,7 @@ const app = (() => {
       <tr class="${o.status === 'cancelado' ? 'dim-row' : ''}">
         <td><div class="strong mono">${o.id}</div><div class="cell-sub">${Store.hora(o.createdAt)}${o.deliveryDate ? ` · entrega ${Store.fecha(o.deliveryDate)}` : ''}</div></td>
         <td><div>${Store.esc(o.customer.name)}</div><div class="cell-sub">${Store.esc(o.customer.phone)} · ${Store.esc(o.customer.address)}</div></td>
-        <td class="items-cell" title="${o.items.map(it => `${it.qty}× ${Store.esc(it.name)}`).join(', ')}">${o.items.map(it => `${it.qty}× ${Store.esc(it.name)}`).join(', ')}</td>
+        <td class="items-cell" title="${o.items.map(it => `${it.qty}× ${Store.esc(it.name)}${it.tam ? ' (' + (TAMLABEL[it.tam] || it.tam) + ')' : ''}`).join(', ')}">${o.items.map(it => `${it.qty}× ${Store.esc(it.name)}${it.tam ? ' (' + (TAMLABEL[it.tam] || it.tam) + ')' : ''}`).join(', ')}</td>
         <td class="num">${Store.money(o.total)}</td>
         <td><span class="badge ${PAY[o.payStatus]}"><span class="dot"></span>${o.payStatus}${o.payMethod === 'efectivo' ? ' · efvo.' : ' · transf.'}</span></td>
         <td><span class="badge ${META[o.status].badge}"><span class="dot"></span>${STATUS_LABEL[o.status]}</span></td>
